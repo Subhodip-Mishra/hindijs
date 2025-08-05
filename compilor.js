@@ -35,18 +35,15 @@ function lexer(input) {
             continue;
         }
 
-        // Block delimiters
         if (char === '{' || char === '}') {
             tokens.push({ type: 'delimiter', value: char });
             cursor++;
             continue;
         }
 
-        // Single-char symbols
         if (/[\+\-\*\/=()?:<>!]/.test(char)) {
             let op = char;
 
-            // Handle 2-char operators (==, !=, >=, <=)
             if (/[=<>!]/.test(char) && input[cursor + 1] === '=') {
                 op += input[++cursor];
             }
@@ -82,7 +79,6 @@ function parser(tokens) {
         return token;
     }
 
-    // Parse binary expressions with precedence
     function parseBinaryExpression(left, minPrec = 0) {
         while (peek() && peek().type === 'operator' && getOperatorPrecedence(peek().value) > 0) {
             const op = peek().value;
@@ -93,7 +89,6 @@ function parser(tokens) {
             consume(); // consume operator
             let right = parsePrimary();
             
-            // Handle right associativity and higher precedence
             while (peek() && peek().type === 'operator' && getOperatorPrecedence(peek().value) > 0) {
                 const nextOp = peek().value;
                 const nextPrec = getOperatorPrecedence(nextOp);
@@ -139,7 +134,6 @@ function parser(tokens) {
             return { type: 'Identifier', name: token.value };
         }
 
-        // Parenthesized expression
         if (token.value === '(') {
             consume(); // consume '('
             const expr = parseExpression();
