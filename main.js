@@ -17,7 +17,6 @@ if (x < y) {
 }
 `;
 
-
 function runAndCaptureOutput(code) {
   const jsCode = compiler(code);
 
