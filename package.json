@@ -1,0 +1,21 @@
+{
+  "name": "h.js",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Subhodip-Mishra/hindijs.git"
+  },
+  "keywords": [
+    "h.js"
+  ],
+  "author": "suvodeep mishra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Subhodip-Mishra/hindijs/issues"
+  },
+  "homepage": "https://github.com/Subhodip-Mishra/hindijs#readme"
+}

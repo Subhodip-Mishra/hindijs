@@ -1,63 +1,6 @@
-function lexer(input) {
-    const tokens = [];
-    let cursor = 0;
-
-    while (cursor < input.length) {
-        let char = input[cursor];
-
-        if (/\s/.test(char)) {
-            cursor++;
-            continue;
-        }
-
-        if (/[a-zA-Z]/.test(char)) {
-            let word = '';
-            while (/[a-zA-Z0-9]/.test(char)) {
-                word += char;
-                char = input[++cursor];
-            }
-
-            if (['ye', 'bol', 'if', 'else'].includes(word)) {
-                tokens.push({ type: 'keyword', value: word });
-            } else {
-                tokens.push({ type: 'identifier', value: word });
-            }
-            continue;
-        }
-
-        if (/[0-9]/.test(char)) {
-            let num = '';
-            while (/[0-9]/.test(char)) {
-                num += char;
-                char = input[++cursor];
-            }
-            tokens.push({ type: 'number', value: parseInt(num) });
-            continue;
-        }
-
-        if (char === '{' || char === '}') {
-            tokens.push({ type: 'delimiter', value: char });
-            cursor++;
-            continue;
-        }
-
-        if (/[\+\-\*\/=()?:<>!]/.test(char)) {
-            let op = char;
-
-            if (/[=<>!]/.test(char) && input[cursor + 1] === '=') {
-                op += input[++cursor];
-            }
-
-            tokens.push({ type: 'operator', value: op });
-            cursor++;
-            continue;
-        }
-
-        throw new SyntaxError(`Unexpected character: ${char}`);
-    }
-
-    return tokens;
-}
+/**
+ * Hindi.js Parser - Converts tokens into Abstract Syntax Tree (AST)
+ */
 
 function parser(tokens) {
     const ast = { type: "Program", body: [] };
@@ -77,6 +20,18 @@ function parser(tokens) {
             throw new SyntaxError(`Expected '${value}', got ${token ? token.value : 'EOF'}`);
         }
         return token;
+    }
+
+    function getOperatorPrecedence(op) {
+        const precedence = {
+            '?': 1,
+            ':': 1,
+            '==': 2, '!=': 2,
+            '<': 3, '>': 3, '<=': 3, '>=': 3,
+            '+': 4, '-': 4,
+            '*': 5, '/': 5
+        };
+        return precedence[op] || 0;
     }
 
     function parseBinaryExpression(left, minPrec = 0) {
@@ -106,18 +61,6 @@ function parser(tokens) {
         return left;
     }
 
-    function getOperatorPrecedence(op) {
-        const precedence = {
-            '?': 1,
-            ':': 1,
-            '==': 2, '!=': 2,
-            '<': 3, '>': 3, '<=': 3, '>=': 3,
-            '+': 4, '-': 4,
-            '*': 5, '/': 5
-        };
-        return precedence[op] || 0;
-    }
-
     function parsePrimary() {
         const token = peek();
         if (!token) return null;
@@ -134,6 +77,7 @@ function parser(tokens) {
             return { type: 'Identifier', name: token.value };
         }
 
+        // Parenthesized expressions
         if (token.value === '(') {
             consume(); // consume '('
             const expr = parseExpression();
@@ -162,7 +106,7 @@ function parser(tokens) {
             };
         }
 
-        // Handle binary expressions (but stop at statement boundaries)
+        // Handle binary expressions
         left = parseBinaryExpression(left);
         
         return left;
@@ -172,7 +116,7 @@ function parser(tokens) {
         const token = peek();
         if (!token) return null;
 
-        // Variable declaration
+        // Variable declaration: ye x = 10
         if (token.type === 'keyword' && token.value === 'ye') {
             consume(); // consume 'ye'
             const nameToken = consume();
@@ -194,7 +138,7 @@ function parser(tokens) {
             return declaration;
         }
 
-        // Print statement
+        // Print statement: bol x
         else if (token.type === 'keyword' && token.value === 'bol') {
             consume(); // consume 'bol'
             return {
@@ -203,7 +147,7 @@ function parser(tokens) {
             };
         }
 
-        // If statement
+        // If statement: if (condition) { ... }
         else if (token.type === 'keyword' && token.value === 'if') {
             consume(); // consume 'if'
             expect('(');
@@ -238,6 +182,7 @@ function parser(tokens) {
         throw new SyntaxError("Unexpected token: " + JSON.stringify(token));
     }
 
+    // Parse all statements
     while (position < tokens.length) {
         const stmt = parseStatement();
         if (stmt) ast.body.push(stmt);
@@ -246,52 +191,4 @@ function parser(tokens) {
     return ast;
 }
 
-function codeGen(node) {
-    switch (node.type) {
-        case "Program": 
-            return node.body.map(codeGen).join('\n');
-        case "Declaration": 
-            return `const ${node.name} = ${node.value ? codeGen(node.value) : 'undefined'};`;
-        case "Print": 
-            return `console.log(${codeGen(node.expression)});`;
-        case "Literal": 
-            return node.value;
-        case "Identifier": 
-            return node.name;
-        case "BinaryExpression":
-            return `${codeGen(node.left)} ${node.operator} ${codeGen(node.right)}`;
-        case "IfStatement":
-            return `if (${codeGen(node.condition)}) {\n${node.consequent.map(stmt => '  ' + codeGen(stmt)).join('\n')}\n}`;
-        case "ConditionalExpression":
-            return `${codeGen(node.test)} ? ${codeGen(node.consequent)} : ${codeGen(node.alternate)}`;
-        default:
-            throw new Error(`Unknown node type: ${node.type}`);
-    }
-}
-
-function compiler(input) {
-    const tokens = lexer(input);
-    const ast = parser(tokens);
-    const executableCode = codeGen(ast);
-    return executableCode;
-}
-
-function runner(input) {
-    eval(input);
-}
-
-const code = `
-ye x = 10
-ye y = 20
-
-ye bigger = x > y ? x : y
-
-bol bigger
-
-if (x < y) {
-    bol bigger
-}
-`;
-
-const exec = compiler(code);
-runner(exec);
+module.exports = parser;
